@@ -8,6 +8,7 @@ import picard.vcf.VcfTestUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -99,11 +100,11 @@ public class FingerprintCheckerTest {
     @Test(dataProvider = "checkFingerprintsVcfDataProvider")
     public void testCheckFingerprintsVcf(final File vcfFile, final File genotypesFile, final String observedSampleAlias, final String expectedSampleAlias,
                                       final double llExpectedSample, final double llRandomSample, final double lodExpectedSample) throws IOException {
-        final File indexedInputVcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(vcfFile, "fingerprintcheckertest.tmp.");
-        final File indexedGenotypesVcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(genotypesFile, "fingerprintcheckertest.tmp.");
+        final Path indexedInputVcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(vcfFile, "fingerprintcheckertest.tmp.").toPath();
+        final Path indexedGenotypesVcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(genotypesFile, "fingerprintcheckertest.tmp.").toPath();
 
         final FingerprintChecker fpChecker = new FingerprintChecker(SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING);
-        final List<FingerprintResults> results = fpChecker.checkFingerprints(Collections.singletonList(indexedInputVcf),
+        final List<FingerprintResults> results = fpChecker.checkFingerprintsFromPaths(Collections.singletonList(indexedInputVcf),
                 Collections.singletonList(indexedGenotypesVcf),
                 observedSampleAlias,
                 expectedSampleAlias);
@@ -122,7 +123,7 @@ public class FingerprintCheckerTest {
     public void testFingerprintVcf(final File vcfFile, final File genotypesFile, final String observedSampleAlias, final String expectedSampleAlias,
                                    final double llExpectedSample, final double llRandomSample, final double lodExpectedSample) throws IOException {
         final FingerprintChecker fpChecker = new FingerprintChecker(SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING);
-        final Map<FingerprintIdDetails, Fingerprint> fp1 = fpChecker.fingerprintVcf(vcfFile);
+        final Map<FingerprintIdDetails, Fingerprint> fp1 = fpChecker.fingerprintVcf(vcfFile.toPath());
 
         Assert.assertFalse(fp1.isEmpty());
     }
@@ -131,7 +132,7 @@ public class FingerprintCheckerTest {
     public void testTerminateOnBadFile() {
         final FingerprintChecker fpChecker = new FingerprintChecker(SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING);
         final File badSam = new File(TEST_DATA_DIR, "aligned_queryname_sorted.sam");
-        fpChecker.fingerprintFiles(Collections.singletonList(badSam), 1, 1, TimeUnit.DAYS);
+        fpChecker.fingerprintFiles(Collections.singletonList(badSam.toPath()), 1, 1, TimeUnit.DAYS);
     }
 
     @DataProvider(name = "checkFingerprintsSamDataProvider")

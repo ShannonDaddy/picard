@@ -51,6 +51,7 @@ import org.broadinstitute.barclay.argparser.SpecialArgumentsCollection;
 import picard.cmdline.argumentcollections.OptionalReferenceArgumentCollection;
 import picard.cmdline.argumentcollections.ReferenceArgumentCollection;
 import picard.cmdline.argumentcollections.RequiredReferenceArgumentCollection;
+import picard.nio.PathHelper;
 import picard.util.PropertyUtils;
 
 import java.io.File;
@@ -243,6 +244,8 @@ public abstract class CommandLineProgram {
             System.setProperty("java.io.tmpdir", f.getAbsolutePath()); // in loop so that last one takes effect
         }
 
+        PathHelper.initilizeAll();
+
         if (!QUIET) {
             System.err.println("[" + new Date() + "] " + commandLine);
 
@@ -253,11 +256,12 @@ public abstract class CommandLineProgram {
                 final boolean usingIntelInflater = (BlockGunzipper.getDefaultInflaterFactory() instanceof IntelInflaterFactory &&
                         ((IntelInflaterFactory)BlockGunzipper.getDefaultInflaterFactory()).usingIntelInflater());
                 final String msg = String.format(
-                    "[%s] Executing as %s@%s on %s %s %s; %s %s; Deflater: %s; Inflater: %s; Picard version: %s",
+                    "[%s] Executing as %s@%s on %s %s %s; %s %s; Deflater: %s; Inflater: %s; %sPicard version: %s",
                     new Date(), System.getProperty("user.name"), InetAddress.getLocalHost().getHostName(),
                     System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"),
                     System.getProperty("java.vm.name"), System.getProperty("java.runtime.version"),
                     usingIntelDeflater ? "Intel" : "Jdk", usingIntelInflater ? "Intel" : "Jdk",
+                    PathHelper.isHasGoogle()? "Has google cloud support; " : "",
                     getCommandLineParser().getVersion());
                 System.err.println(msg);
             }
