@@ -30,19 +30,15 @@ import htsjdk.samtools.filter.NotPrimaryAlignmentFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.filter.SecondaryAlignmentFilter;
 import htsjdk.samtools.util.*;
-import htsjdk.tribble.TribbleException;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.GenotypeLikelihoods;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
-import htsjdk.variant.vcf.VCFPathReader;
 import picard.PicardException;
 import picard.util.AlleleSubsettingUtils;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
@@ -157,7 +153,7 @@ public class FingerprintChecker {
      */
     public Map<String, Fingerprint> loadFingerprints(final Path fingerprintFile, final String specificSample) {
         SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(),
-                VCFPathReader.getSequenceDictionary(fingerprintFile));
+                VCFFileReader.getSequenceDictionary(fingerprintFile));
 
         if (isQueryable(fingerprintFile)) {
             return loadFingerprintsFromIndexedVcf(fingerprintFile, specificSample);
@@ -177,7 +173,7 @@ public class FingerprintChecker {
      * @return a Map of Sample name to Fingerprint
      */
     public Map<String, Fingerprint> loadFingerprintsFromNonIndexedVcf(final Path fingerprintFile, final String specificSample) {
-        final VCFPathReader reader = new VCFPathReader(fingerprintFile, false);
+        final VCFFileReader reader = new VCFFileReader(fingerprintFile, false);
 
         final Map<String, Fingerprint> fingerprints = new HashMap<>();
         Set<String> samples = null;
@@ -219,10 +215,10 @@ public class FingerprintChecker {
      * @return a Map of Sample name to Fingerprint
      */
     public Map<String, Fingerprint> loadFingerprintsFromIndexedVcf(final Path fingerprintFile, final String specificSample) {
-        final VCFPathReader reader = new VCFPathReader(fingerprintFile, true);
+        final VCFFileReader reader = new VCFFileReader(fingerprintFile, true);
 
         SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(),
-                VCFPathReader.getSequenceDictionary(fingerprintFile));
+                VCFFileReader.getSequenceDictionary(fingerprintFile));
 
         final SortedSet<Snp> snps = new TreeSet<>(haplotypes.getAllSnps());
 
