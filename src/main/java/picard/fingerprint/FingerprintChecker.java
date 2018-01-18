@@ -30,6 +30,7 @@ import htsjdk.samtools.filter.NotPrimaryAlignmentFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
 import htsjdk.samtools.filter.SecondaryAlignmentFilter;
 import htsjdk.samtools.util.*;
+import htsjdk.variant.utils.SAMSequenceDictionaryExtractor;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.GenotypeLikelihoods;
@@ -155,13 +156,13 @@ public class FingerprintChecker {
         SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(),
                 VCFFileReader.getSequenceDictionary(fingerprintFile));
 
-        final VCFFileReader reader = new VCFFileReader(fingerprintFile, true);
+        final VCFFileReader reader = new VCFFileReader(fingerprintFile, false);
 
         if (reader.isQueryable()) {
             return loadFingerprintsFromQueriableReader(reader, specificSample, fingerprintFile);
         } else {
             log.warn("Couldn't find index for file " + fingerprintFile + " going to read through it all.");
-            return loadFingerprintsFromNonQueriableReader(reader, specificSample, fingerprintFile);
+            return loadFingerprintsFromVariantContexts(reader, specificSample, fingerprintFile);
         }
     }
 
@@ -176,30 +177,28 @@ public class FingerprintChecker {
      */
     public Map<String, Fingerprint> loadFingerprintsFromNonIndexedVcf(final Path fingerprintFile, final String specificSample) {
         final VCFFileReader reader = new VCFFileReader(fingerprintFile, false);
+        SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(), SAMSequenceDictionaryExtractor.extractDictionary(fingerprintFile));
 
-        return loadFingerprintsFromNonQueriableReader(reader, specificSample, fingerprintFile);
+        return loadFingerprintsFromVariantContexts(reader, specificSample, fingerprintFile);
     }
 
     /**
      * Loads genotypes from the supplied file into one or more Fingerprint objects and returns them in a
      * Map of Sample->Fingerprint.
      *
-     * @param reader         - VCF reader containing genotypes for one or more samples
+     * @param iterable       - an iterable over variantContexts containing genotypes for one or more samples
      * @param specificSample - null to load genotypes for all samples contained in the file or the name
      *                       of an individual sample to load (and exclude all others).
-     * @param source         The path of the source file used. used to emit errors.
+     * @param source         The path of the source file used. used to emit errors, and annotate the fingerprints.
      * @return a Map of Sample name to Fingerprint
      */
-    public Map<String, Fingerprint> loadFingerprintsFromNonQueriableReader(final VCFFileReader reader, final String specificSample, final Path source) {
-        SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(), reader.getFileHeader().getSequenceDictionary());
-
-        final SortedSet<Snp> snps = new TreeSet<>(haplotypes.getAllSnps());
+    public Map<String, Fingerprint> loadFingerprintsFromVariantContexts(final Iterable<VariantContext> iterable, final String specificSample, final Path source) {
 
         final Map<String, Fingerprint> fingerprints = new HashMap<>();
         Set<String> samples = null;
 
-        for (final Snp snp : snps) {
-            final VariantContext ctx = reader.query(snp.getChrom(), snp.getPos(), snp.getPos()).next();
+        for (final VariantContext ctx : iterable) {
+            // Setup the sample names set if needed
             if (ctx == null) continue;
 
             if (samples == null) {
@@ -257,35 +256,15 @@ public class FingerprintChecker {
 
         final SortedSet<Snp> snps = new TreeSet<>(haplotypes.getAllSnps());
 
-        final Map<String, Fingerprint> fingerprints = new HashMap<>();
-        Set<String> samples = null;
-
-        for (final Snp snp : snps) {
-            final VariantContext ctx = reader.query(snp.getChrom(), snp.getPos(), snp.getPos()).next();
-            if (ctx == null) continue;
-
-            if (samples == null) {
-                if (specificSample != null) {
-                    samples = new HashSet<>();
-                    samples.add(specificSample);
-                } else {
-                    samples = ctx.getSampleNames();
-                    if (samples == null) {
-                        log.warn("No samples found in file " + source + ". Skipping file.");
-                        return Collections.emptyMap();
-                    }
-                }
-
-                samples.forEach(s -> fingerprints.put(s, new Fingerprint(s, source, null)));
-            }
-            try {
-                getFingerprintFromVc(fingerprints, ctx);
-            } catch (final IllegalArgumentException e) {
-                log.warn("There was a genotyping error in File: " + source + "\n" + e.getMessage());
-            }
-        }
-
-        return fingerprints;
+        return loadFingerprintsFromVariantContexts(() ->
+                        snps.stream().map(snp -> {
+                            try {
+                                return reader.query(snp.getChrom(), snp.getPos(), snp.getPos()).next();
+                            } catch (NoSuchElementException e) {
+                                return null;
+                            }
+                        }).iterator(),
+                specificSample, source);
     }
 
     /**
@@ -296,8 +275,9 @@ public class FingerprintChecker {
      */
     private void getFingerprintFromVc(final Map<String, Fingerprint> fingerprints, final VariantContext ctx) throws IllegalArgumentException {
         final HaplotypeBlock h = this.haplotypes.getHaplotype(ctx.getContig(), ctx.getStart());
-        final Snp snp = this.haplotypes.getSnp(ctx.getContig(), ctx.getStart());
         if (h == null) return;
+
+        final Snp snp = this.haplotypes.getSnp(ctx.getContig(), ctx.getStart());
 
         final VariantContext usableSnp = AlleleSubsettingUtils.subsetVCToMatchSnp(ctx, snp);
         if (usableSnp == null) {

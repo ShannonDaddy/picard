@@ -1,5 +1,6 @@
 package picard.fingerprint;
 
+import htsjdk.variant.vcf.VCFFileReader;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -210,18 +211,15 @@ public class FingerprintCheckerTest {
         tests.add(new Object[]{new File(TEST_DATA_DIR, "NA12891.vcf"), false});
         tests.add(new Object[]{VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891.vcf"), "fingerprintcheckertest.tmp."), true});
         tests.add(new Object[]{VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891.vcf.gz"), "fingerprintcheckertest.tmp."), true});
-        tests.add(new Object[]{new File("/dev/null"), false});
-        tests.add(new Object[]{new File("/dev/stdin"), false});
-        tests.add(new Object[]{new File("/dev/stdout"), false});
-        tests.add(new Object[]{new File("."), false});
-        tests.add(new Object[]{new File(".."), false});
-        tests.add(new Object[]{new File("/"), false});
-        tests.add(new Object[]{TEST_DATA_DIR, false});
 
         return tests.iterator();
     }
+
     @Test(dataProvider = "queryableData")
-    public void testQueryable(final File vcf, boolean expectedQueryable){
-        Assert.assertEquals(FingerprintChecker.isQueryable(vcf),expectedQueryable);
+    public void testQueryable(final File vcf, boolean expectedQueryable) {
+
+        try(VCFFileReader reader = new VCFFileReader(vcf, false)) {
+            Assert.assertEquals(reader.isQueryable(), expectedQueryable);
+        }
     }
 }
