@@ -73,10 +73,10 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
     @Test
     public void testBaseOutput() {
         String[] args = new String[]{
-                "I=" + TEST_INPUT_VCF1,
+                "I=" + TEST_INPUT_VCF1.getAbsolutePath(),
                 "O=" + TEST_OUTPUT,
-                "G=" + TEST_GENOTYPES_VCF1,
-                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING
+                "G=" + TEST_GENOTYPES_VCF1.getAbsolutePath(),
+                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING.getAbsolutePath()
         };
         Assert.assertEquals(runPicardCommandLine(args), 0);
         Assert.assertTrue(MetricsFile.areMetricsEqual(new File(TEST_OUTPUT + ".fingerprinting_summary_metrics"),
@@ -88,11 +88,11 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
     @Test
     public void testSummaryAndDetailOutputs() {
         String[] args = new String[]{
-                "I=" + TEST_INPUT_VCF1,
+                "I=" + TEST_INPUT_VCF1.getAbsolutePath(),
                 "S=" + TEST_DATA_DIR + "/tempCheckFPDir/summary",
                 "D=" + TEST_DATA_DIR + "/tempCheckFPDir/detail",
-                "G=" + TEST_GENOTYPES_VCF1,
-                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING
+                "G=" + TEST_GENOTYPES_VCF1.getAbsolutePath(),
+                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING.getAbsolutePath()
         };
         Assert.assertEquals(runPicardCommandLine(args), 0);
         Assert.assertTrue(MetricsFile.areMetricsEqual(new File(TEST_DATA_DIR + "/tempCheckFPDir/summary"),
@@ -107,10 +107,10 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
                             final File genotypesFile,
                             final File haplotypeFile) {
         String[] args = new String[]{
-                "I=" + inputVcf,
+                "I=" + inputVcf.getAbsolutePath(),
                 "O=" + outputLoc,
-                "G=" + genotypesFile,
-                "H=" + haplotypeFile
+                "G=" + genotypesFile.getAbsolutePath(),
+                "H=" + haplotypeFile.getAbsolutePath()
         };
         Assert.assertEquals(runPicardCommandLine(args), 0);
     }

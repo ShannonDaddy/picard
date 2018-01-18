@@ -256,7 +256,7 @@ public class CheckFingerprint extends CommandLineProgram {
                 if (observedSampleAlias == null) {
                     observedSampleAlias = rec.getSample();
                 } else if (!observedSampleAlias.equals(rec.getSample())) {
-                    throw new PicardException("INPUT SAM/BAM file must not contain data from multiple samples.");
+                    throw new PicardException("inputPath SAM/BAM file must not contain data from multiple samples.");
                 }
             }
             CloserUtil.close(in);
@@ -374,9 +374,8 @@ public class CheckFingerprint extends CommandLineProgram {
     }
 
     protected String[] customCommandLineValidation() {
-        IOUtil.assertFileIsReadable(inputPath);
 
-        boolean isBamOrSamFile = isBamOrSam(inputPath);
+        final boolean isBamOrSamFile = isBamOrSam(INPUT);
         if (!isBamOrSamFile && IGNORE_READ_GROUPS) {
             return new String[]{"The parameter IGNORE_READ_GROUPS can only be used with BAM/SAM inputs."};
         }
@@ -386,9 +385,14 @@ public class CheckFingerprint extends CommandLineProgram {
         return super.customCommandLineValidation();
     }
 
-    static boolean isBamOrSam(final File f) {
-        return (BamFileIoUtils.isBamFile(f) || f.getName().endsWith(IOUtil.SAM_FILE_EXTENSION));
+    static boolean isBamOrSam(final String s) {
+        return isBamOrSam(new File(s));
     }
+
+    static boolean isBamOrSam(final File f) {
+        return isBamOrSam(f.toPath());
+    }
+
     static boolean isBamOrSam(final Path p) {
         return (p.toUri().getRawPath().endsWith(BamFileIoUtils.BAM_FILE_EXTENSION) || p.toUri().getRawPath().endsWith(IOUtil.SAM_FILE_EXTENSION));
     }
