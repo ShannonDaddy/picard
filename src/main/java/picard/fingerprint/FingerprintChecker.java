@@ -155,11 +155,13 @@ public class FingerprintChecker {
         SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(),
                 VCFFileReader.getSequenceDictionary(fingerprintFile));
 
-        if (isQueryable(fingerprintFile)) {
-            return loadFingerprintsFromIndexedVcf(fingerprintFile, specificSample);
+        final VCFFileReader reader = new VCFFileReader(fingerprintFile, true);
+
+        if (reader.isQueryable()) {
+            return loadFingerprintsFromQueriableReader(reader, specificSample, fingerprintFile);
         } else {
             log.warn("Couldn't find index for file " + fingerprintFile + " going to read through it all.");
-            return loadFingerprintsFromNonIndexedVcf(fingerprintFile, specificSample);
+            return loadFingerprintsFromNonQueriableReader(reader, specificSample, fingerprintFile);
         }
     }
 
@@ -175,50 +177,21 @@ public class FingerprintChecker {
     public Map<String, Fingerprint> loadFingerprintsFromNonIndexedVcf(final Path fingerprintFile, final String specificSample) {
         final VCFFileReader reader = new VCFFileReader(fingerprintFile, false);
 
-        final Map<String, Fingerprint> fingerprints = new HashMap<>();
-        Set<String> samples = null;
-
-        for (final VariantContext ctx : reader) {
-            // Setup the sample names set if needed
-
-            if (samples == null) {
-                if (specificSample != null) {
-                    samples = new HashSet<>();
-                    samples.add(specificSample);
-                } else {
-                    samples = ctx.getSampleNames();
-                    if (samples == null) {
-                        log.warn("No samples found in file " + fingerprintFile + ". Skipping file.");
-                        return Collections.emptyMap();
-                    }
-                }
-
-                samples.forEach(s -> fingerprints.put(s, new Fingerprint(s, fingerprintFile, null)));
-            }
-            try {
-                getFingerprintFromVc(fingerprints, ctx);
-            } catch (final IllegalArgumentException e) {
-                log.warn("There was a genotyping error in File: " + fingerprintFile + "\n" + e.getMessage());
-            }
-        }
-
-        return fingerprints;
+        return loadFingerprintsFromNonQueriableReader(reader, specificSample, fingerprintFile);
     }
 
     /**
      * Loads genotypes from the supplied file into one or more Fingerprint objects and returns them in a
      * Map of Sample->Fingerprint.
      *
-     * @param fingerprintFile - VCF file containing genotypes for one or more samples
-     * @param specificSample  - null to load genotypes for all samples contained in the file or the name
-     *                        of an individual sample to load (and exclude all others).
+     * @param reader         - VCF reader containing genotypes for one or more samples
+     * @param specificSample - null to load genotypes for all samples contained in the file or the name
+     *                       of an individual sample to load (and exclude all others).
+     * @param source         The path of the source file used. used to emit errors.
      * @return a Map of Sample name to Fingerprint
      */
-    public Map<String, Fingerprint> loadFingerprintsFromIndexedVcf(final Path fingerprintFile, final String specificSample) {
-        final VCFFileReader reader = new VCFFileReader(fingerprintFile, true);
-
-        SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(),
-                VCFFileReader.getSequenceDictionary(fingerprintFile));
+    public Map<String, Fingerprint> loadFingerprintsFromNonQueriableReader(final VCFFileReader reader, final String specificSample, final Path source) {
+        SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(), reader.getFileHeader().getSequenceDictionary());
 
         final SortedSet<Snp> snps = new TreeSet<>(haplotypes.getAllSnps());
 
@@ -236,17 +209,79 @@ public class FingerprintChecker {
                 } else {
                     samples = ctx.getSampleNames();
                     if (samples == null) {
-                        log.warn("No samples found in file " + fingerprintFile + ". Skipping file.");
+                        log.warn("No samples found in file: " + source.toUri().toString() + ". Skipping.");
                         return Collections.emptyMap();
                     }
                 }
 
-                samples.forEach(s -> fingerprints.put(s, new Fingerprint(s, fingerprintFile, null)));
+                samples.forEach(s -> fingerprints.put(s, new Fingerprint(s, source, null)));
             }
             try {
                 getFingerprintFromVc(fingerprints, ctx);
             } catch (final IllegalArgumentException e) {
-                log.warn("There was a genotyping error in File: " + fingerprintFile + "\n" + e.getMessage());
+                log.warn("There was a genotyping error in File: " + source.toUri().toString() + "\n" + e.getMessage());
+            }
+        }
+
+        return fingerprints;
+    }
+
+    /**
+     * Loads genotypes from the supplied file into one or more Fingerprint objects and returns them in a
+     * Map of Sample->Fingerprint.
+     *
+     * @param fingerprintFile - VCF file containing genotypes for one or more samples
+     * @param specificSample  - null to load genotypes for all samples contained in the file or the name
+     *                        of an individual sample to load (and exclude all others).
+     * @return a Map of Sample name to Fingerprint
+     */
+    public Map<String, Fingerprint> loadFingerprintsFromIndexedVcf(final Path fingerprintFile, final String specificSample) {
+        final VCFFileReader reader = new VCFFileReader(fingerprintFile, true);
+        return loadFingerprintsFromQueriableReader(reader, specificSample, fingerprintFile);
+    }
+
+    /**
+     * Loads genotypes from the supplied reader into one or more Fingerprint objects and returns them in a
+     * Map of Sample->Fingerprint.
+     *
+     * @param reader         - VCF reader containing genotypes for one or more samples
+     * @param specificSample - null to load genotypes for all samples contained in the file or the name
+     *                       of an individual sample to load (and exclude all others).
+     * @param source         The path of the source file used. used to emit errors.
+     * @return a Map of Sample name to Fingerprint
+     */
+    public Map<String, Fingerprint> loadFingerprintsFromQueriableReader(final VCFFileReader reader, final String specificSample, final Path source) {
+
+        SequenceUtil.assertSequenceDictionariesEqual(this.haplotypes.getHeader().getSequenceDictionary(),
+                reader.getFileHeader().getSequenceDictionary());
+
+        final SortedSet<Snp> snps = new TreeSet<>(haplotypes.getAllSnps());
+
+        final Map<String, Fingerprint> fingerprints = new HashMap<>();
+        Set<String> samples = null;
+
+        for (final Snp snp : snps) {
+            final VariantContext ctx = reader.query(snp.getChrom(), snp.getPos(), snp.getPos()).next();
+            if (ctx == null) continue;
+
+            if (samples == null) {
+                if (specificSample != null) {
+                    samples = new HashSet<>();
+                    samples.add(specificSample);
+                } else {
+                    samples = ctx.getSampleNames();
+                    if (samples == null) {
+                        log.warn("No samples found in file " + source + ". Skipping file.");
+                        return Collections.emptyMap();
+                    }
+                }
+
+                samples.forEach(s -> fingerprints.put(s, new Fingerprint(s, source, null)));
+            }
+            try {
+                getFingerprintFromVc(fingerprints, ctx);
+            } catch (final IllegalArgumentException e) {
+                log.warn("There was a genotyping error in File: " + source + "\n" + e.getMessage());
             }
         }
 
@@ -645,11 +680,11 @@ public class FingerprintChecker {
 
     /**
      * checks to see if any of the done futures in the map have thrown an exception,
-     *   and in that case throws a RuntimeException.
-     *
-     *   Removes isDone() futures from the map.
+     * and in that case throws a RuntimeException.
+     * <p>
+     * Removes isDone() futures from the map.
      */
-    private void checkFutures(final Map<Future<?>, Path> futures){
+    private void checkFutures(final Map<Future<?>, Path> futures) {
         for (final Map.Entry<Future<?>, Path> futureFileEntry : futures.entrySet()) {
             try {
                 futureFileEntry.getKey().get();

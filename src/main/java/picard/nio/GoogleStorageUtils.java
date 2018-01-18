@@ -7,11 +7,11 @@ import com.google.cloud.storage.contrib.nio.CloudStorageFileSystemProvider;
 import shaded.cloud_nio.com.google.api.gax.retrying.RetrySettings;
 import shaded.cloud_nio.org.threeten.bp.Duration;
 
+
 /**
  * Created by farjoun on 11/13/17.
  */
 class GoogleStorageUtils {
-
 
     public static void initialize() {
         CloudStorageFileSystemProvider.setDefaultCloudStorageConfiguration(GoogleStorageUtils.getCloudStorageConfiguration(20));
