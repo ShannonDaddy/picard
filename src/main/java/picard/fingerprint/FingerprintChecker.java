@@ -780,7 +780,6 @@ public class FingerprintChecker {
 
     public static MatchResults calculateMatchResults(final Fingerprint observedFp, final Fingerprint expectedFp, final double minPExpected, final double pLoH) {
         return calculateMatchResults(observedFp, expectedFp, minPExpected, pLoH, true, true);
-
     }
 
     /**

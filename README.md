@@ -106,6 +106,9 @@ H=Haplotype_db.txt \
 O=crosscheck.out
 ```
 
+Alternatively, you can run the tool via the [GATK](https://software.broadinstitute.org/gatk/download/) which bundles the Google-Cloud
+jar, and should thus "Just Work".
+
 #### GA4GH API
 It's also possible to build a version of Picard that supports reading from
 GA4GH API, e.g. Google Genomics:

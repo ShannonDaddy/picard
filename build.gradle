@@ -69,7 +69,6 @@ dependencies {
 
     testCompile 'org.testng:testng:6.9.10'
     testCompile 'org.apache.commons:commons-lang3:3.6'
-
 }
 
 configurations.all {

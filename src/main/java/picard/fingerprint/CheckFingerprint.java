@@ -231,7 +231,7 @@ public class CheckFingerprint extends CommandLineProgram {
 
         try {
             inputPath = IOUtil.getPath(INPUT);
-            genotypesPath= IOUtil.getPath(GENOTYPES);
+            genotypesPath = IOUtil.getPath(GENOTYPES);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
@@ -256,7 +256,7 @@ public class CheckFingerprint extends CommandLineProgram {
                 if (observedSampleAlias == null) {
                     observedSampleAlias = rec.getSample();
                 } else if (!observedSampleAlias.equals(rec.getSample())) {
-                    throw new PicardException("inputPath SAM/BAM file must not contain data from multiple samples.");
+                    throw new PicardException("INPUT SAM/BAM file must not contain data from multiple samples.");
                 }
             }
             CloserUtil.close(in);

@@ -254,7 +254,7 @@ public class CrosscheckFingerprints extends CommandLineProgram {
             "Should only be used with SECOND_INPUT. ", optional = true)
     public File SECOND_INPUT_SAMPLE_MAP;
 
-    @Argument(doc = "An argument that controls how crosschecking with two lists should occur. ")
+    @Argument(doc = "An argument that controls how crosschecking with both INPUT and SECOND_INPUT should occur. ")
     public CrosscheckMode CROSSCHECK_MODE = CHECK_SAME_SAMPLE;
 
     @Argument(shortName = StandardOptionDefinitions.OUTPUT_SHORT_NAME, optional = true,
@@ -339,27 +339,25 @@ public class CrosscheckFingerprints extends CommandLineProgram {
             return new String[]{"GENOTYPING_ERROR_RATE must be greater than zero. Found " + GENOTYPING_ERROR_RATE};
         }
         return super.customCommandLineValidation();
-
     }
 
     enum CrosscheckMode implements CommandLineParser.ClpEnum {
         CHECK_SAME_SAMPLE {
             @Override
             public String getHelpDoc() {
-                return "When operating in this mode, each sample in INPUT will only be checked against a corresponding sample in SECOND_INPUT. " +
+                return "In this mode, each sample in INPUT will only be checked against a single corresponding sample in SECOND_INPUT. " +
                         "If a corresponding sample cannot be found, the program will proceed, but report the missing samples" +
-                        " and return the value specified in EXIT_CODE_WHEN_MISMATCH. In this mode CROSSCHECK_BY must be SAMPLE.";
+                        " and return the value specified in EXIT_CODE_WHEN_MISMATCH. The corresponding samples are those that equal each other, after possible renaming " +
+                        "via INPUT_SAMPLE_MAP and SECOND_INPUT_SAMPLE_MAP. In this mode CROSSCHECK_BY must be SAMPLE.";
             }
         },
         CHECK_ALL_OTHERS {
             @Override
             public String getHelpDoc() {
-                return "When operating in this mode, each sample in INPUT will be checked against all the samples in SECOND_INPUT.";
+                return "In this mode, each sample in INPUT will be checked against all the samples in SECOND_INPUT.";
             }
         }
     }
-
-
 
     @Override
     protected int doWork() {
@@ -532,7 +530,6 @@ public class CrosscheckFingerprints extends CommandLineProgram {
             //put the fingerprint back in with the updates key
             fpMap.put(id, fingerprint);
         });
-
     }
 
     private void writeMatrix() {
