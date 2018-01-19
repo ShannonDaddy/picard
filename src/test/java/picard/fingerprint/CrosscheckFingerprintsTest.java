@@ -15,6 +15,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Tests for CrosscheckFingerprints
@@ -549,7 +550,6 @@ public class CrosscheckFingerprintsTest {
         metrics.deleteOnExit();
 
         final List<String> args = new ArrayList<>();
-
         files.forEach(f->args.add("INPUT="+f.getAbsolutePath()));
 
         args.add("OUTPUT=" + metrics.getAbsolutePath());
@@ -560,29 +560,27 @@ public class CrosscheckFingerprintsTest {
         doTest(args.toArray(new String[args.size()]), metrics, expectedRetVal, numberOfSamples , CrosscheckMetric.DataType.FILE, ExpectAllMatch);
     }
 
-
-
     @DataProvider(name = "checkPathsData")
     public Iterator<Object[]> checkPathsData() throws IOException {
         List<Object[]> tests = new ArrayList<>();
 
-        final File fofn = File.createTempFile("crosscheck","fofn", TEST_DATA_DIR);
+        final File fofn = File.createTempFile("crosscheck",".fofn", TEST_DATA_DIR);
         fofn.deleteOnExit();
 
         PrintWriter writer = new PrintWriter(new FileWriter(fofn));
         writer.println(NA12892_1_vcf.getAbsolutePath());
         writer.println(NA12891_g_vcf.getAbsolutePath());
         writer.println(NA12892_g_vcf.getAbsolutePath());
+        final int fofnSize = 3;
         writer.close();
 
         // VCF tests
-        tests.add(new Object[]{Arrays.asList(NA12891_1_vcf.getAbsolutePath(), NA12892_1_vcf.getAbsolutePath(), NA12891_g_vcf.getAbsolutePath(), NA12892_g_vcf.getAbsolutePath()), HAPLOTYPE_MAP.getAbsolutePath(), 0, 4 * 4, false});
-        tests.add(new Object[]{Arrays.asList(NA12892_1_vcf.getAbsolutePath(), NA12891_g_vcf.getAbsolutePath(), NA12892_g_vcf.getAbsolutePath()), HAPLOTYPE_MAP.getAbsolutePath(), 0, 3 * 3, false});
-        tests.add(new Object[]{Collections.singletonList(fofn.getAbsolutePath()), HAPLOTYPE_MAP.getAbsolutePath(), 0, 4 * 4, false});
+        tests.add(new Object[]{Stream.of(NA12891_1_vcf, NA12892_1_vcf, NA12891_g_vcf, NA12892_g_vcf).map(File::getAbsolutePath).collect(Collectors.toList()), HAPLOTYPE_MAP.getAbsolutePath(), 0, 4 * 4, false});
+        tests.add(new Object[]{Stream.of(NA12892_1_vcf, NA12891_g_vcf, NA12892_g_vcf).map(File::getAbsolutePath).collect(Collectors.toList()), HAPLOTYPE_MAP.getAbsolutePath(), 0, 3 * 3, false});
+        tests.add(new Object[]{Collections.singletonList(fofn.getAbsolutePath()), HAPLOTYPE_MAP.getAbsolutePath(), 0, fofnSize * fofnSize, false});
 
         return tests.iterator();
     }
-
 
     @Test(dataProvider = "checkPathsData")
     public void testCheckPaths(final List<String> paths, final String haploypeMap, final int expectedRetVal, final int numberOfSamples, boolean ExpectAllMatch) throws IOException {
@@ -600,9 +598,6 @@ public class CrosscheckFingerprintsTest {
 
         doTest(args.toArray(new String[args.size()]), metrics, expectedRetVal, numberOfSamples , CrosscheckMetric.DataType.FILE, ExpectAllMatch);
     }
-
-
-
 
     private void doTest(final String[] args, final File metrics, final int expectedRetVal, final int expectedNMetrics, final CrosscheckMetric.DataType expectedType) throws IOException {
         doTest(args, metrics, expectedRetVal, expectedNMetrics, expectedType, false);
