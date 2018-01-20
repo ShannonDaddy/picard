@@ -251,6 +251,14 @@ public abstract class CommandLineProgram {
 
             // Output a one liner about who/where and what software/os we're running on
             try {
+                StringBuilder pathProvidersBuilder = new StringBuilder();
+
+                for(PathHelper.PathProviders providers : PathHelper.PathProviders.values()) {
+                    pathProvidersBuilder.append(String.format("Provider %s is%s available; ",
+                            providers.name(), providers.isAvailable() ? "" : " not"));
+                }
+
+
                 final boolean usingIntelDeflater = (BlockCompressedOutputStream.getDefaultDeflaterFactory() instanceof IntelDeflaterFactory &&
                         ((IntelDeflaterFactory)BlockCompressedOutputStream.getDefaultDeflaterFactory()).usingIntelDeflater());
                 final boolean usingIntelInflater = (BlockGunzipper.getDefaultInflaterFactory() instanceof IntelInflaterFactory &&
@@ -261,7 +269,7 @@ public abstract class CommandLineProgram {
                     System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"),
                     System.getProperty("java.vm.name"), System.getProperty("java.runtime.version"),
                     usingIntelDeflater ? "Intel" : "Jdk", usingIntelInflater ? "Intel" : "Jdk",
-                    PathHelper.isHasGoogle()? "Has google cloud support; " : "",
+                    pathProvidersBuilder.toString(),
                     getCommandLineParser().getVersion());
                 System.err.println(msg);
             }

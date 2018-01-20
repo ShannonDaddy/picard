@@ -20,14 +20,14 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
 
     private final File tempFolder = new File(TEST_DATA_DIR + "/tempCheckFPDir/");
     private static final File TEST_DATA_DIR = new File("testdata/picard/fingerprint/");
-    private static final File SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING =
-            new File(TEST_DATA_DIR, "Homo_sapiens_assembly19.haplotype_database.subset.txt");
-    private static final File TEST_INPUT_VCF1 = new File(TEST_DATA_DIR, "NA12892.vcf");
-    private static final File TEST_INPUT_VCF_EMPTY = new File(TEST_DATA_DIR, "/tempCheckFPDir/void.vcf");
-    private static final File TEST_INPUT_VCF_NO_FILE = new File(TEST_DATA_DIR, "noFile.vcf");
-    private static final File TEST_OUTPUT = new File(TEST_DATA_DIR + "/tempCheckFPDir/otp.fp");
-    private static final File TEST_GENOTYPES_VCF1 = new File(TEST_DATA_DIR, "NA12892.g.vcf");
-    private static final File TEST_GENOTYPES_VCF_NO_FILE = new File(TEST_DATA_DIR, "noFile.g.vcf");
+    private static final String SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING =
+            new File(TEST_DATA_DIR, "Homo_sapiens_assembly19.haplotype_database.subset.txt").getAbsolutePath();
+    private static final String TEST_INPUT_VCF1 = new File(TEST_DATA_DIR, "NA12892.vcf").getAbsolutePath();
+    private static final String TEST_INPUT_VCF_EMPTY = new File(TEST_DATA_DIR, "/tempCheckFPDir/void.vcf").getAbsolutePath();
+    private static final String TEST_INPUT_VCF_NO_FILE = new File(TEST_DATA_DIR, "noFile.vcf").getAbsolutePath();
+    private static final String TEST_OUTPUT = new File(TEST_DATA_DIR + "/tempCheckFPDir/otp.fp").getAbsolutePath();
+    private static final String TEST_GENOTYPES_VCF1 = new File(TEST_DATA_DIR, "NA12892.g.vcf").getAbsolutePath();
+    private static final String TEST_GENOTYPES_VCF_NO_FILE = new File(TEST_DATA_DIR, "noFile.g.vcf").getAbsolutePath();
     private static final File RESULT_EXAMPLE_SUMMARY =
             new File(TEST_DATA_DIR, "fingerprinting_summary_metrics.example");
     private static final File RESULT_EXAMPLE_DETAIL =
@@ -73,11 +73,12 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
     @Test
     public void testBaseOutput() {
         String[] args = new String[]{
-                "I=" + TEST_INPUT_VCF1.getAbsolutePath(),
+                "I=" + TEST_INPUT_VCF1,
                 "O=" + TEST_OUTPUT,
-                "G=" + TEST_GENOTYPES_VCF1.getAbsolutePath(),
-                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING.getAbsolutePath()
+                "G=" + TEST_GENOTYPES_VCF1,
+                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING
         };
+
         Assert.assertEquals(runPicardCommandLine(args), 0);
         Assert.assertTrue(MetricsFile.areMetricsEqual(new File(TEST_OUTPUT + ".fingerprinting_summary_metrics"),
                 RESULT_EXAMPLE_SUMMARY));
@@ -88,11 +89,11 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
     @Test
     public void testSummaryAndDetailOutputs() {
         String[] args = new String[]{
-                "I=" + TEST_INPUT_VCF1.getAbsolutePath(),
+                "I=" + TEST_INPUT_VCF1,
                 "S=" + TEST_DATA_DIR + "/tempCheckFPDir/summary",
                 "D=" + TEST_DATA_DIR + "/tempCheckFPDir/detail",
-                "G=" + TEST_GENOTYPES_VCF1.getAbsolutePath(),
-                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING.getAbsolutePath()
+                "G=" + TEST_GENOTYPES_VCF1,
+                "H=" + SUBSETTED_HAPLOTYPE_DATABASE_FOR_TESTING
         };
         Assert.assertEquals(runPicardCommandLine(args), 0);
         Assert.assertTrue(MetricsFile.areMetricsEqual(new File(TEST_DATA_DIR + "/tempCheckFPDir/summary"),
@@ -102,15 +103,15 @@ public class CheckFingerprintTest extends CommandLineProgramTest {
     }
 
     @Test(dataProvider = "badData", expectedExceptions = {MalformedFeatureFile.class, SAMException.class})
-    public void testBadData(final File inputVcf,
-                            final File outputLoc,
-                            final File genotypesFile,
-                            final File haplotypeFile) {
+    public void testBadData(final String inputVcf,
+                            final String outputLoc,
+                            final String genotypesFile,
+                            final String haplotypeFile) {
         String[] args = new String[]{
-                "I=" + inputVcf.getAbsolutePath(),
+                "I=" + inputVcf,
                 "O=" + outputLoc,
-                "G=" + genotypesFile.getAbsolutePath(),
-                "H=" + haplotypeFile.getAbsolutePath()
+                "G=" + genotypesFile,
+                "H=" + haplotypeFile
         };
         Assert.assertEquals(runPicardCommandLine(args), 0);
     }

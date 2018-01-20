@@ -81,7 +81,6 @@ public class CrosscheckFingerprintsTest {
                 "RIGHT_LANE", "RIGHT_MOLECULAR_BARCODE_SEQUENCE"));
         lookupMap.get(CrosscheckMetric.DataType.READGROUP).addAll(lookupMap.get(CrosscheckMetric.DataType.LIBRARY));
 
-
         NA12891_1_vcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891.vcf"), "fingerprint");
         NA12891_2_vcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891.fp.vcf"), "fingerprint");
         NA12891_named_NA12892_vcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891_named_NA12892.vcf"), "fingerprint");
@@ -95,7 +94,6 @@ public class CrosscheckFingerprintsTest {
         NA12892_and_NA123891_part1_vcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891andNA12892_part1.vcf"), "fingerprint");
         NA12892_and_NA123891_part2_vcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891andNA12892_part2.vcf"), "fingerprint");
         NA12892_and_NA123891_part3_vcf = VcfTestUtils.createTemporaryIndexedVcfFromInput(new File(TEST_DATA_DIR, "NA12891andNA12892_part3.vcf"), "fingerprint");
-
     }
 
     @DataProvider(name = "bamFilesRGs")
@@ -219,7 +217,6 @@ public class CrosscheckFingerprintsTest {
         final int numLibs=2;
         doTest(args, metrics, expectedRetVal, numLibs * numLibs, CrosscheckMetric.DataType.LIBRARY);
     }
-
 
     @DataProvider(name = "bamFilesSources")
     public Object[][] bamFilesSources() {
@@ -428,7 +425,6 @@ public class CrosscheckFingerprintsTest {
         return tests.iterator();
     }
 
-
     @Test(dataProvider = "checkSamplesCrosscheckAllWithMappingData")
     public void testSecondInputCheckAllWithMapping(final List<File> files1, final List<File> files2, final File inputSampleMap, final File secondInputSampleMap, final int expectedRetVal, final int numberOfSamples1, final int numberOfSamples2, boolean ExpectAllMatch) throws IOException {
         File metrics = File.createTempFile("Fingerprinting", "test.crosscheck_metrics");
@@ -473,7 +469,6 @@ public class CrosscheckFingerprintsTest {
         return tests.iterator();
     }
 
-
     @Test(dataProvider = "checkSampleMapFailuresData", expectedExceptions = IllegalArgumentException.class)
     public void checkSampleMapFailuresData( final File inputSampleMap, final File secondInputSampleMap) throws IOException {
         File metrics = File.createTempFile("Fingerprinting", "test.crosscheck_metrics");
@@ -497,7 +492,6 @@ public class CrosscheckFingerprintsTest {
 
         doTest(args.toArray(new String[args.size()]), metrics, 0, 0 , CrosscheckMetric.DataType.SAMPLE, false);
     }
-
 
     @Test(dataProvider = "checkSamplesCrosscheckAllData")
     public void testSecondInputCheckAll(final List<File> files1, final List<File> files2, final int expectedRetVal, final int numberOfSamples1, final int numberOfSamples2, boolean ExpectAllMatch) throws IOException {
@@ -661,7 +655,6 @@ public class CrosscheckFingerprintsTest {
             }
         }
     }
-
 
     @Test
     public void canWriteToDevNull() throws IOException {
