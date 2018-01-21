@@ -375,18 +375,18 @@ public class CheckFingerprint extends CommandLineProgram {
 
     protected String[] customCommandLineValidation() {
 
-        final boolean isBamOrSamFile = isBamOrSam(INPUT);
-        if (!isBamOrSamFile && IGNORE_READ_GROUPS) {
-            return new String[]{"The parameter IGNORE_READ_GROUPS can only be used with BAM/SAM inputs."};
-        }
-        if (isBamOrSamFile && OBSERVED_SAMPLE_ALIAS != null) {
-            return new String[]{"The parameter OBSERVED_SAMPLE_ALIAS can only be used with a VCF input."};
+        try {
+            final boolean isBamOrSamFile = isBamOrSam(IOUtil.getPath(INPUT));
+            if (!isBamOrSamFile && IGNORE_READ_GROUPS) {
+                return new String[]{"The parameter IGNORE_READ_GROUPS can only be used with BAM/SAM inputs."};
+            }
+            if (isBamOrSamFile && OBSERVED_SAMPLE_ALIAS != null) {
+                return new String[]{"The parameter OBSERVED_SAMPLE_ALIAS can only be used with a VCF input."};
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return super.customCommandLineValidation();
-    }
-
-    static boolean isBamOrSam(final String s) {
-        return isBamOrSam(new File(s));
     }
 
     static boolean isBamOrSam(final File f) {

@@ -24,7 +24,6 @@
 
 package picard.fingerprint;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import htsjdk.samtools.*;
 import htsjdk.samtools.filter.NotPrimaryAlignmentFilter;
 import htsjdk.samtools.filter.SamRecordFilter;
@@ -38,6 +37,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import picard.PicardException;
 import picard.util.AlleleSubsettingUtils;
+import picard.util.ThreadPoolExecutorWithExceptions;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -618,14 +618,12 @@ public class FingerprintChecker {
 
         // Generate fingerprints from each file
         final AtomicInteger filesRead = new AtomicInteger(0);
-        final ExecutorService executor = Executors.newFixedThreadPool(threads, new ThreadFactoryBuilder().setDaemon(true).build());
+        final ExecutorService executor = new ThreadPoolExecutorWithExceptions(threads);
         final IntervalList intervals = this.haplotypes.getIntervalList();
         final Map<FingerprintIdDetails, Fingerprint> retval = new ConcurrentHashMap<>();
 
-        final Map<Future<?>, Path> futures = new HashMap<>(files.size());
-
         for (final Path p : files) {
-            futures.put(executor.submit(() -> {
+            executor.submit(() -> {
 
                 if (CheckFingerprint.isBamOrSam(p)) {
                     retval.putAll(fingerprintSamFile(p, intervals));
@@ -637,11 +635,7 @@ public class FingerprintChecker {
                 if (filesRead.incrementAndGet() % 100 == 0) {
                     log.info("Processed " + filesRead.get() + " out of " + files.size());
                 }
-            }), p);
-
-            // checks the isDone() Futures and checks that they didn't fail, so that if
-            // one of them does fail we can fail-fast. (removes the isDone futures from the map)
-            checkFutures(futures);
+            });
         }
 
         executor.shutdown();
@@ -651,30 +645,9 @@ public class FingerprintChecker {
             log.warn(ie, "Interrupted while waiting for executor to terminate.");
         }
 
-        // checks the isDone() Futures and checks that they didn't fail, so that if
-        // one of them does fail we can fail-fast. (removes the isDone futures from the map)
-        checkFutures(futures);
-
         return retval;
     }
 
-    /**
-     * checks to see if any of the done futures in the map have thrown an exception,
-     * and in that case throws a RuntimeException.
-     * <p>
-     * Removes isDone() futures from the map.
-     */
-    private void checkFutures(final Map<Future<?>, Path> futures) {
-        for (final Map.Entry<Future<?>, Path> futureFileEntry : futures.entrySet()) {
-            try {
-                futureFileEntry.getKey().get();
-                futures.remove(futureFileEntry.getKey());
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("Failed to fingerprint file: " + futureFileEntry.getValue());
-                throw new RuntimeException(e);
-            }
-        }
-    }
 
     /**
      * Top level method to take a set of one or more SAM files and one or more Genotype files and compare
@@ -780,6 +753,7 @@ public class FingerprintChecker {
 
     public static MatchResults calculateMatchResults(final Fingerprint observedFp, final Fingerprint expectedFp, final double minPExpected, final double pLoH) {
         return calculateMatchResults(observedFp, expectedFp, minPExpected, pLoH, true, true);
+
     }
 
     /**

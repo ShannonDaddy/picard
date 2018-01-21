@@ -190,7 +190,6 @@ public class FingerprintCheckerTest {
 
     @Test(dataProvider = "checkFingerprintsSamDataProviderFail", expectedExceptions = RuntimeException.class)
     public void testCheckFingerprintsFail(final File samFile1, final File samFile2, final boolean expectedMatch) {
-
         final String[] args = {
                 "EXPECT_ALL_GROUPS_TO_MATCH=true",
                 "LOD_THRESHOLD=-1",
@@ -217,7 +216,6 @@ public class FingerprintCheckerTest {
 
     @Test(dataProvider = "queryableData")
     public void testQueryable(final File vcf, boolean expectedQueryable) {
-
         try(VCFFileReader reader = new VCFFileReader(vcf, false)) {
             Assert.assertEquals(reader.isQueryable(), expectedQueryable);
         }
