@@ -353,8 +353,6 @@ public class FingerprintChecker {
      * Takes a set of fingerprints and returns an IntervalList containing all the loci that
      * can be productively examined in sequencing data to compare to one or more of the
      * fingerprints.
-     *
-     *
      */
     public IntervalList getLociToGenotype(final Collection<Fingerprint> fingerprints) {
         final IntervalList intervals = new IntervalList(this.haplotypes.getHeader());
@@ -619,11 +617,12 @@ public class FingerprintChecker {
         // Generate fingerprints from each file
         final AtomicInteger filesRead = new AtomicInteger(0);
         final ExecutorService executor = new ThreadPoolExecutorWithExceptions(threads);
+        final ExecutorCompletionService<Path> finisher = new ExecutorCompletionService<>(executor);
         final IntervalList intervals = this.haplotypes.getIntervalList();
         final Map<FingerprintIdDetails, Fingerprint> retval = new ConcurrentHashMap<>();
 
         for (final Path p : files) {
-            executor.submit(() -> {
+            finisher.submit(() -> {
 
                 if (CheckFingerprint.isBamOrSam(p)) {
                     retval.putAll(fingerprintSamFile(p, intervals));
@@ -635,11 +634,20 @@ public class FingerprintChecker {
                 if (filesRead.incrementAndGet() % 100 == 0) {
                     log.info("Processed " + filesRead.get() + " out of " + files.size());
                 }
-            });
+            }, p);
         }
 
         executor.shutdown();
+        for (final Path p : files) {
+            try {
+                finisher.take().get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new PicardException("Trouble fingerprinting file " + p, e);
+            }
+        }
+
         try {
+
             executor.awaitTermination(waitTime, waitTimeUnit);
         } catch (final InterruptedException ie) {
             log.warn(ie, "Interrupted while waiting for executor to terminate.");
@@ -647,7 +655,6 @@ public class FingerprintChecker {
 
         return retval;
     }
-
 
     /**
      * Top level method to take a set of one or more SAM files and one or more Genotype files and compare
